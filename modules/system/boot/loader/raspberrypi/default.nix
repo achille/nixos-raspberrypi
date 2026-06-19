@@ -135,12 +135,18 @@ let
   };
   kernelbootBuilder = import ./kernelboot-builder.nix {
     inherit pkgs;
-    firmwareBuilder = firmwarePopulateCmd;
+    # Use host-platform (target) firmwareBuilder here, not firmwarePopulateCmd
+    # (which uses pkgs.buildPackages). installBootLoader runs on the target
+    # machine at activation time; using build-platform binaries causes
+    # "Exec format error" when the build host and target have different ISAs
+    # (e.g. aarch64 builder → armv7l target).
+    firmwareBuilder = "${firmwareBuilder} ${firmwareBuilderArgs}";
   };
   ubootBuilder = import ./uboot-builder.nix {
     inherit pkgs ubootBinName;
     inherit (cfg) ubootPackage;
-    firmwareBuilder = firmwarePopulateCmd;
+    # Same reason as kernelbootBuilder above: use host-platform firmwareBuilder.
+    firmwareBuilder = "${firmwareBuilder} ${firmwareBuilderArgs}";
     extlinuxConfBuilder = config.boot.loader.generic-extlinux-compatible.populateCmd;
   };
 
